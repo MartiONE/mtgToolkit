@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Config
 general.cfg.bak
 
@@ -5,6 +6,8 @@ general.cfg.bak
 *.wpr
 *.wpu
 
+=======
+>>>>>>> 9c8a34d6953355feeb98b6a83bdb1a5f8fcc9ed2
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -15,7 +18,10 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+<<<<<<< HEAD
 venv/
+=======
+>>>>>>> 9c8a34d6953355feeb98b6a83bdb1a5f8fcc9ed2
 env/
 build/
 develop-eggs/
@@ -59,6 +65,17 @@ coverage.xml
 
 # Django stuff:
 *.log
+<<<<<<< HEAD
+=======
+local_settings.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+>>>>>>> 9c8a34d6953355feeb98b6a83bdb1a5f8fcc9ed2
 
 # Sphinx documentation
 docs/_build/
@@ -66,5 +83,29 @@ docs/_build/
 # PyBuilder
 target/
 
+<<<<<<< HEAD
 #Ipython Notebook
 .ipynb_checkpoints
+=======
+# IPython Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# dotenv
+.env
+
+# virtualenv
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+
+# Rope project settings
+.ropeproject
+>>>>>>> 9c8a34d6953355feeb98b6a83bdb1a5f8fcc9ed2
