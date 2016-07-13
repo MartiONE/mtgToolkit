@@ -28,11 +28,12 @@ class Set:
             else: self.mythics+=c
             
     def calculateSumofPrices(self, _dict, language="English"):
+        languageCodes = {"English" : 1, "French" : 2, "German" : 3, "Spanish" : 4, "Italian" : 5, "S-Chinese" : 6, "Japanese" : 7, "Portuguese" : 8, "Russian" : 9, "Korean" : 10, "T-Chinese" : 11}
         # Initialize the payload for the filter
         payload = {"productFilter[sellerStatus0]":"on",
                    "productFilter[sellerStatus1]":"on",
                    "productFilter[sellerStatus2]":"on",
-                   "productFilter[idLanguage][]":"5",
+                   "productFilter[idLanguage][]":str(languageCodes[language]),
                    "productFilter[condition][]":"MT",
                    "productFilter[condition][]":"NM",
                    "productFilter[isFoil]":"N",
@@ -44,33 +45,36 @@ class Set:
             req = requests.post("https://www.magiccardmarket.eu/Products/Singles/{}/{}".format("+".join(self.setName.split()), "+".join(card.name.split()).replace("/", "%2F%2F").replace("'", "%27")), data = payload)
             if card.name in req.text:
                 tree = html.fromstring(req.text)
-                a = tree.xpath("//tbody[@id='articlesTable']/tr/td[@class='st_price']")[0]
-                total += float(re.match("\d{1,2}[\.,]\d+", a.text_content()).group().replace(",", "."))
+                # Getting the first 5 prices
+                a = [float(re.match("\d{1,2}[\.,]\d+", a.text_content()).group().replace(",", ".")) 
+                     for a in tree.xpath("//tbody[@id='articlesTable']/tr/td[@class='st_price']")[:5]]
+                # Adding the average
+                total += sum(a)/len(a)
             else:
                 print("Error on card " + card.name)
         return round(total, 2)
     
-    def calculateSetPrice(self):
-        return self.calculateSumofPrices(self.cards)
+    def calculateSetPrice(self, language):
+        return self.calculateSumofPrices(self.cards, language=language)
 
-    def calculateCommonsPrices(self):
-        return self.calculateSumofPrices(self.commons)
+    def calculateCommonsPrices(self, language):
+        return self.calculateSumofPrices(self.commons, language=language)
     
-    def calculateUncommonsPrices(self):
-        return self.calculateSumofPrices(self.uncommons)
+    def calculateUncommonsPrices(self, language):
+        return self.calculateSumofPrices(self.uncommons, language=language)
     
-    def calculateRaresPrices(self):
-        return self.calculateSumofPrices(self.rares)
+    def calculateRaresPrices(self, language):
+        return self.calculateSumofPrices(self.rares, language=language)
     
     def calculateMythicsPrices(self):
-        return self.calculateSumofPrices(self.mythics)
+        return self.calculateSumofPrices(self.mythics, language=language)
     
-    def calculateAverageBoosterPackPrice(self):
-        common = self.calculateCommonsPrices() / len(self.commons)
-        uncommon = self.calculateUncommonsPrices() / len(self.uncommons)
-        rare = self.calculateRaresPrices() / len(self.rares)
+    def calculateAverageBoosterPackPrice(self, language):
+        common = self.calculateCommonsPrices(language) / len(self.commons)
+        uncommon = self.calculateUncommonsPrices(language) / len(self.uncommons)
+        rare = self.calculateRaresPrices(language) / len(self.rares)
         #mythic = self.calculateMythicsPrices() / len(self.mythics)
-        return({"BoosterValue" : round((common * self.boosterStructure.count("common")) + (uncommon * self.boosterStructure.count("uncommon")) + rare, 2),
+        return({"BoosterValueNoFoil" : round((common * self.boosterStructure.count("common")) + (uncommon * self.boosterStructure.count("uncommon")) + rare, 2),
                 "AverageCommon": common,
                 "AverageUncommon" : uncommon,
                 "AverageRare" : rare})
