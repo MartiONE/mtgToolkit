@@ -25,7 +25,17 @@ class Set:
             if c.rarity == "Common": self.commons+=(c,)
             elif c.rarity == "Uncommon": self.uncommons+=(c,)
             elif c.rarity == "Rare": self.rares+=(c,)
-            else: self.mythics+=c
+            elif c.rarity == "Mythic": self.mythics+=(c,)
+
+        # Because it is special, yeah, like Ralph
+        if self.setName == "Time Spiral":
+            self.timeshifted = ()
+            req = requests.get("http://mtgjson.com/json/TSB.json")
+            for card in req.json()["cards"]:
+                # Storage of every card into its own place
+                c = Card(**card)
+                self.cards.append(c)
+                self.timeshifted+=(c,)
             
     def calculateSumofPrices(self, _dict, language="English"):
         languageCodes = {"English" : 1, "French" : 2, "German" : 3, "Spanish" : 4, "Italian" : 5, "S-Chinese" : 6, "Japanese" : 7, "Portuguese" : 8, "Russian" : 9, "Korean" : 10, "T-Chinese" : 11}
@@ -42,11 +52,14 @@ class Set:
                    "productFilter[minAmount]":"1"}
         total = 0
         for card in _dict:
-            req = requests.post("https://www.magiccardmarket.eu/Products/Singles/{}/{}".format("+".join(self.setName.split()), "+".join(card.name.split()).replace("/", "%2F%2F").replace("'", "%27")), data = payload)
+            # Split cards exception, checking for only one (the a)
+            if (card.layout == "split") and ("a" in card.number):
+                card.name = " // ".join(card.names)
+            req = requests.post("https://www.magiccardmarket.eu/Products/Singles/{}/{}".format("+".join(self.setName.split()), "+".join(card.name.split()).replace("//", "%2F%2F").replace("'", "%27")), data = payload)
             if card.name in req.text:
                 tree = html.fromstring(req.text)
                 # Getting the first 5 prices
-                a = [float(re.match("\d{1,2}[\.,]\d+", a.text_content()).group().replace(",", ".")) 
+                a = [float(re.match("\d+[\.,]\d+", a.text_content()).group().replace(",", ".")) 
                      for a in tree.xpath("//tbody[@id='articlesTable']/tr/td[@class='st_price']")[:5]]
                 # Adding the average
                 total += sum(a)/len(a)
@@ -66,16 +79,24 @@ class Set:
     def calculateRaresPrices(self, language):
         return self.calculateSumofPrices(self.rares, language=language)
     
-    def calculateMythicsPrices(self):
+    def calculateMythicsPrices(self, language):
         return self.calculateSumofPrices(self.mythics, language=language)
+    
+    def calculateTimeshiftedPurplePrices(self, language):
+        return self.calculateSumofPrices(self.timeshifted, language=language)
+        
     
     def calculateAverageBoosterPackPrice(self, language):
         common = self.calculateCommonsPrices(language) / len(self.commons)
         uncommon = self.calculateUncommonsPrices(language) / len(self.uncommons)
         rare = self.calculateRaresPrices(language) / len(self.rares)
-        #mythic = self.calculateMythicsPrices() / len(self.mythics)
-        return({"BoosterValueNoFoil" : round((common * self.boosterStructure.count("common")) + (uncommon * self.boosterStructure.count("uncommon")) + rare, 2),
+        if self.setName == "Time Spiral":
+            timeshifted = self.calculateTimeshiftedPurplePrices(language) / len(self.timeshifted)
+        #mythic = self.calculateMythicsPrices(language) / len(self.mythics)
+        return({"BoosterValueNoFoil" : round((common * self.boosterStructure.count("common")) + (uncommon * self.boosterStructure.count("uncommon")) + rare +
+                                            (timeshifted if self.setName == "Time Spiral" else 0) , 2),
                 "AverageCommon": common,
                 "AverageUncommon" : uncommon,
-                "AverageRare" : rare})
+                "AverageRare" : rare,
+                "AverageTimeshiftedPurple": timeshifted if self.setName == "Time Spiral" else None})
 
